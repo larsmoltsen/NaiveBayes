@@ -1,10 +1,104 @@
 package moltsen.AI.NaiveBayes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import moltsen.AI.NaiveBayes.model.*;
 
+/**
+ * <p>Add class labels, features with any number of states, prior and conditional
+ * probabilities. Then compute the probability of each class labels given observed
+ * features.</p>
+ *
+ * <h2>Example</h2>
+ * 
+ * <p>Imagine you want to use the classifier to quickly diagnose if a patient
+ * has either the flu or measles, and you are able to observe fever and (red)
+ * spots on the skin of the patient. This can be modelled as follows:</p>
+ * 
+ * <h3>Class labels:</h3>
+ * <ul>
+ * <li>Flu</li>
+ * <li>Measles</li>
+ * <li>No disease</li>
+ * </ul>
+ * 
+ * <h3>Features:</h3>
+ * <ul>
+ * <li>Fever (yes, no)</li>
+ * <li>Red spots (yes, no)</li>
+ * </ul>
+ * 
+ * <p>This can be programmed and tested as follows.</p>
+ * 
+ * <pre>
+try {
+	NaiveBayesClassifier c = new NaiveBayesClassifier();
+	c.addClassLabel("Flu");
+	c.addClassLabel("Measles");
+	c.addClassLabel("No disease");
+
+	c.addFeature("Fever");
+	c.addState("Fever", "yes");
+	c.addState("Fever", "no");
+
+	c.addFeature("Red spots");
+	c.addState("Red spots", "yes");
+	c.addState("Red spots", "no");
+
+	c.setPriorProbability("Flu", 0.06d);
+	c.setPriorProbability("Measles", 0.04d);
+	c.setPriorProbability("No disease", 0.90d);
+    
+	// Probability of observing Fever=yes given different diseases 
+	c.setConditionalProbability("Fever", "yes", "Flu", 0.90d);
+	c.setConditionalProbability("Fever", "yes", "Measles", 0.90d);
+	c.setConditionalProbability("Fever", "yes", "No disease", 0.01d);
+    	
+	// Probability of observing Fever=no given different diseases 
+	c.setConditionalProbability("Fever", "no", "Flu", 0.10d);
+	c.setConditionalProbability("Fever", "no", "Measles", 0.10d);
+	c.setConditionalProbability("Fever", "no", "No disease", 0.99d);
+
+	// Probability of observing Red spots=yes given different diseases
+	c.setConditionalProbability("Red spots", "yes", "Flu", 0.05d);
+	c.setConditionalProbability("Red spots", "yes", "Measles", 0.90d);
+	c.setConditionalProbability("Red spots", "yes", "No disease", 0.01d);
+    
+	// Probability of observing Red spots=no given different diseases 
+	c.setConditionalProbability("Red spots", "no", "Flu", 0.95d);
+	c.setConditionalProbability("Red spots", "no", "Measles", 0.10d);
+	c.setConditionalProbability("Red spots", "no", "No disease", 0.99d);
+
+	// Inject observations as a Map object
+	HashMap<String, String> observations = new HashMap<String, String>();
+	observations.put("Fever", "yes");
+	observations.put("Red spots", "no");
+	Double[] result = c.classify(observations);
+	
+	// Present results
+	System.out.println("Results (Fever=yes, Red spots=no)");
+	System.out.println("Probability of Flu: " + result[0]);
+	System.out.println("Probability of Measles: " + result[1]);
+	System.out.println("Probability of No disease: " + result[2]);
+catch (Exception e) {
+	// Fix something...
+}
+ * </pre>
+ *
+ * <p>Output from this code:</p>
+ * 
+ * <pre>
+  Results (Fever=yes, Red spots=no)
+  Probability of Flu: 0.8039492242595203
+  Probability of Measles: 0.056417489421720736
+  Probability of No disease: 0.13963328631875882
+ * </pre>
+ * 
+ * @author  Lars Moltsen
+ * @version 1.0
+ */
 public class NaiveBayesClassifier {
 	private NaiveBayesData data;
 
@@ -12,10 +106,10 @@ public class NaiveBayesClassifier {
 	/**
 	 * Add a class label.
 	 * 
-	 * @param label
+	 * @param label The new class label
 	 * @throws DataStructureException 
 	 */
-	public void addLabel(String label) throws DataStructureException {
+	public void addClassLabel(String label) throws DataStructureException {
 		if (data == null) { initNaiveBayesClassifier(); }
 		if (data.getClassLabels().contains(label)) {	throw new DataStructureException("Label already exists (\"" + label + "\")"); }
 		
@@ -32,7 +126,7 @@ public class NaiveBayesClassifier {
 	/**
 	 * Removes the specified label.
 	 * 
-	 * @param label
+	 * @param label The target class label
 	 * @throws DataStructureException
 	 */
 	public void removeLabel(String label) throws DataStructureException {
@@ -54,7 +148,7 @@ public class NaiveBayesClassifier {
 	/**
 	 * Adds a feature.
 	 * 
-	 * @param name
+	 * @param name The name of the new feature
 	 * @throws DataStructureException
 	 */
 	public void addFeature(String featureName) throws DataStructureException {
@@ -71,7 +165,7 @@ public class NaiveBayesClassifier {
 	/**
 	 * Remove a feature.
 	 * 
-	 * @param name
+	 * @param name The name of the target feature.
 	 * @throws DataStructureException
 	 */
 	public void removeFeature(String featureName) throws DataStructureException {
@@ -85,8 +179,8 @@ public class NaiveBayesClassifier {
 	/**
 	 * Adds a new state of the given feature.
 	 * 
-	 * @param featureName
-	 * @param stateLabel
+	 * @param featureName The name of the target feature.
+	 * @param stateLabel The new state label.
 	 * @throws DataStructureException
 	 */
 	public void addState(String featureName, String stateLabel) throws DataStructureException {
@@ -106,8 +200,8 @@ public class NaiveBayesClassifier {
 	/**
 	 * Removes a state.
 	 * 
-	 * @param featureName
-	 * @param stateLabel
+	 * @param featureName The name of the target feature.
+	 * @param stateLabel The target state label.
 	 * @throws DataStructureException
 	 */
 	public void removeState(String featureName, String stateLabel) throws DataStructureException {
@@ -122,10 +216,11 @@ public class NaiveBayesClassifier {
 	
 
 	/**
-	 * Set the prior probability of a class label.
+	 * Set the prior (default) probability of a class label. The prior probability is
+	 * what you get if you use the classify method with no observed features. 
 	 * 
-	 * @param classLabel
-	 * @param prior
+	 * @param classLabel The name of the target class label.
+	 * @param prior The prior probability of the class label.
 	 * @throws DataStructureException
 	 */
 	public void setPriorProbability(String classLabel, double priorProbability) throws DataStructureException {
@@ -139,7 +234,9 @@ public class NaiveBayesClassifier {
 	
 
 	/**
-	 * Set the conditional probability of a state given a class label.
+	 * Set the conditional probability of a state given a class label. The conditional
+	 * probability is what you would expect for this feature if the given class label
+	 * was known.
 	 * 
 	 * @param ofState
 	 * @param ofFeature
@@ -162,9 +259,21 @@ public class NaiveBayesClassifier {
 	
 	
 	/**
+	 * Returns all class labels.
+	 * 
+	 * @return Class labels as an array of String.
+	 */
+	public String[] getClassLabels() {
+		if (data == null) { initNaiveBayesClassifier(); }
+		
+		String[] result = new String[data.getClassLabels().size()];
+		return data.getClassLabels().toArray(result);
+	}
+	
+	/**
 	 * Returns all features.
 	 * 
-	 * @return
+	 * @return Features as an array of String.
 	 */
 	public String[] getFeatures() {
 		if (data == null) { initNaiveBayesClassifier(); }
@@ -180,8 +289,8 @@ public class NaiveBayesClassifier {
 	/**
 	 * Returns the states of a feature.
 	 * 
-	 * @param featureName
-	 * @return
+	 * @param featureName The feature.
+	 * @return States of a feature as an array of String.
 	 * @throws DataStructureException
 	 */
 	public String[] getStates(String featureName) throws DataStructureException {
@@ -200,7 +309,7 @@ public class NaiveBayesClassifier {
 	/**
 	 * Returns prior probabilities.
 	 * 
-	 * @return
+	 * @return The prior probability distribution over the class labels.
 	 */
 	public Double[] getPriorProbabilities() {
 		if (data == null) { initNaiveBayesClassifier(); }
@@ -213,9 +322,9 @@ public class NaiveBayesClassifier {
 	/**
 	 * Returns the conditional probabilities of some feature state given all class labels.
 	 * 
-	 * @param featureName
-	 * @param ofState
-	 * @return
+	 * @param featureName The feature of interest.
+	 * @param ofState The state of interest.
+	 * @return The conditional probability of the given state per class label.
 	 * @throws DataStructureException
 	 */
 	public Double[] getConditionalProbabilities(String featureName, String ofState) throws DataStructureException {
@@ -233,7 +342,10 @@ public class NaiveBayesClassifier {
 	
 	
 	/**
-	 * Examines the consistency of prior and conditional probabilities and throws an exception if inconsistent.
+	 * Examines the consistency of prior and conditional probabilities and
+	 * throws an exception if inconsistent. This is done as the first step
+	 * in the classify method.
+	 * 
 	 * @throws DataStructureException
 	 */
 	public void validate() throws DataStructureException {
@@ -262,6 +374,14 @@ public class NaiveBayesClassifier {
 	}
 	
 	
+	/**
+	 * The Naive Bayes classifiaction algorithm. The structure of the classifier
+	 * must be complete and consistent. If not, an exception will be thrown.
+	 * 
+	 * @param observations A map (e.g. HashMap) of feature (key) and state (value) pairs. 
+	 * @return A probability distribution over the class labels given the observations.
+	 * @throws DataStructureException
+	 */
 	public Double[] classify(Map<String, String> observations) throws DataStructureException {
 		validate();
 

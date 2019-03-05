@@ -3,6 +3,12 @@ package moltsen.AI.NaiveBayes.model;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * The data representation of a Naive Bayes classifier.
+ * 
+ * @author  Lars Moltsen
+ * @version 1.0
+ */
 public class NaiveBayesData {
 	private ArrayList<String> classLabels;
 	private ArrayList<Double> priorProbabilities;

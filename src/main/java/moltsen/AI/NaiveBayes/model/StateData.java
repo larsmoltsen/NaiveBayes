@@ -2,6 +2,12 @@ package moltsen.AI.NaiveBayes.model;
 
 import java.util.ArrayList;
 
+/**
+ * The data representation of a feature state.
+ * 
+ * @author  Lars Moltsen
+ * @version 1.0
+ */
 public class StateData {
 	private String label;
 	private ArrayList<Double> conditionalProbabilities;

@@ -43,9 +43,9 @@ public class NBTest
     	c = new NaiveBayesClassifier();
     	
     	try {
-    		c.addLabel("Flu");
-    		c.addLabel("Measles");
-    		c.addLabel("No disease");
+    		c.addClassLabel("Flu");
+    		c.addClassLabel("Measles");
+    		c.addClassLabel("No disease");
 
     		c.addFeature("Fever");
     		c.addState("Fever", "yes");
@@ -95,7 +95,7 @@ public class NBTest
     public void testDoNotAllowDoublets()
     {
     	try {
-    		c.addLabel("Flu");
+    		c.addClassLabel("Flu");
             assertTrue("Exception should happen", false);
     	}
     	catch (Exception e) {
